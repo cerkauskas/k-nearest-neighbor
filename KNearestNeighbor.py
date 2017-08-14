@@ -1,3 +1,5 @@
+import numpy as np
+
 
 class KNearestNeighbor(object):
     def __init__(self, k):
@@ -10,12 +12,7 @@ class KNearestNeighbor(object):
         self._training_labels = labels
 
     def _distance(self, a, b):
-        sum = 0
-
-        for i, j in zip(a, b):
-            sum += (int(i)-int(j))**2
-
-        return sum
+        return np.linalg.norm(a-b)
 
     def predict(self, features):
         minimum_distance = float('Inf')
