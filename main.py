@@ -2,7 +2,7 @@
 
 from KNearestNeighbor import KNearestNeighbor
 from time import time
-
+import numpy as np
 
 def unpickle(file):
     import cPickle
@@ -10,36 +10,51 @@ def unpickle(file):
         dict = cPickle.load(fo)
     return dict
 
+
+data = None
+labels = None
+
+for i in range(1, 6):
+    dict = unpickle('cifar-10-batches-py/data_batch_' + str(i))
+
+    if data is None:
+        data = dict['data']
+        labels = dict['labels']
+    else:
+        data = np.concatenate((data, dict['data']))
+        labels = np.concatenate((labels, dict['labels']))
+
 classifier = KNearestNeighbor(1)
-
-dict = unpickle('cifar-10-batches-py/data_batch_1')
-
-data = dict['data']
-labels = dict['labels']
 
 classifier.train(data, labels)
 
 success = 0
 failure = 0
 times = []
-for i in range(len(data)):
-    if i % 100 == 0:
-        print "%d predictions have been made" % i
-    features = data[i]
-    label = labels[i]
+test_data_dict = unpickle('cifar-10-batches-py/test_batch')
+test_data = test_data_dict['data']
+test_labels = test_data_dict['labels']
 
-    start = time()
-    prediction = classifier.predict(data[i])
-    end = time()
-    times.append(end-start)
+try:
+    for i in range(len(test_data)):
+        if i % 100 == 0:
+            print "%d predictions have been made" % i
 
-    if prediction != label:
-        failure += 1
-    else:
-        success += 1
+        features = test_data[i]
+        label = test_labels[i]
+        start = time()
+        prediction = classifier.predict(features)
+        end = time()
 
-rate = 100*success / float(success + failure)
-avg_time = reduce(lambda a, b: a+b, times) / len(times)
+        times.append(end-start)
 
-print "Success rate is %f" % rate
-print "Average time to make a prediction is %f" % avg_time
+        if prediction != label:
+            failure += 1
+        else:
+            success += 1
+finally:
+    rate = 100*success / float(success + failure)
+    avg_time = reduce(lambda a, b: a+b, times) / len(times)
+
+    print "Success rate is %f%%" % rate
+    print "Average time to make a prediction is %f" % avg_time
