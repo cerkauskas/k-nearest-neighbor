@@ -44,13 +44,9 @@ class KNearestNeighbor(object):
         return max(options.iteritems(), key=operator.itemgetter(1))[0]
 
     def predict(self, features):
-        candidates = []
+        target = np.repeat([features], len(self._training_data), axis=0)
+        dists = np.sum(np.square(self._training_data - target), axis=1)
+        indices = dists.argsort()[:self._k]
+        labels = map(lambda x: {'label': self._training_labels[x]}, indices)
 
-        for i in range(len(self._training_data)):
-            distance = self._distance(features, self._training_data[i])
-            candidates = self._keep(candidates, {
-                'label': self._training_labels[i],
-                'distance': distance
-            })
-
-        return self._choose_majority(candidates)
+        return self._choose_majority(labels)
