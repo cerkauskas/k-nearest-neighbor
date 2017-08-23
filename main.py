@@ -14,18 +14,10 @@ def unpickle(file):
     return dict
 
 
-data = None
-labels = None
+dict = unpickle('cifar-10-batches-py/data_batch_1')
 
-for i in range(1, 6):
-    dict = unpickle('cifar-10-batches-py/data_batch_' + str(i))
-
-    if data is None:
-        data = dict['data']
-        labels = dict['labels']
-    else:
-        data = np.concatenate((data, dict['data']))
-        labels = np.concatenate((labels, dict['labels']))
+data = dict['data']
+labels = dict['labels']
 
 test_data_dict = unpickle('cifar-10-batches-py/test_batch')
 test_data = test_data_dict['data']
@@ -64,50 +56,12 @@ def Worker(k):
         avg_time = reduce(lambda a, b: a+b, times) / len(times)
         print avg_time
 
-        queue.put([
-            k, success, failure, rate, avg_time
-        ])
-
     print "k=%d is calculated" % k
 
 
-def Reader():
-    while True:
-        item = queue.get()
-        if item == 'DONE':
-            break
-
-        with file('results.csv', 'a') as f:
-            csv.writer(f).writerow(item)
-
-
 global_start = time.time()
-queue = multiprocessing.Queue()
-reader_p = multiprocessing.Process(target=Reader)
-reader_p.daemon = True
-reader_p.start()
 
-k = 87
-k_max = 111
-simultaneus_processes = multiprocessing.cpu_count() - 1
-while True:
-    if k > k_max:
-        for p in multiprocessing.active_children():
-            if p != reader_p:
-                p.join()
-
-        queue.put('DONE')
-
-        break
-
-    active_children = len(multiprocessing.active_children())
-
-    if active_children < simultaneus_processes - 1:
-        worker = multiprocessing.Process(target=Worker, args=(k, ))
-        worker.start()
-
-        print "k=%d started" % k
-        k += 1
+Worker(20)
 
 global_end = time.time()
 
